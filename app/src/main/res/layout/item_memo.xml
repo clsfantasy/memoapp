@@ -7,7 +7,7 @@
     android:padding="12dp">
 
     <TextView
-        android:id="@+id/tvTitle"
+        android:id="@+id/textTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="标题"
@@ -18,12 +18,12 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
-        android:id="@+id/tvContent"
+        android:id="@+id/textContent"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="内容"
         android:textSize="14sp"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintTop_toBottomOf="@id/textTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

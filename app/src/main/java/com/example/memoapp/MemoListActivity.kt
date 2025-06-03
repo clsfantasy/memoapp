@@ -1,5 +1,7 @@
 package com.example.memoapp
 
+import MemoAdapter
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -25,9 +27,19 @@ class MemoListActivity : AppCompatActivity() {
             binding.recyclerView.adapter = memoAdapter
         }
 
-        // 测试：添加一条记录
-        lifecycleScope.launch {
-            db.memoDao().insert(Memo(title = "测试标题", content = "这是一条测试内容"))
+
+
+
+        binding.buttonAdd.setOnClickListener {
+            val intent = Intent(this, MemoDetailActivity::class.java)
+            startActivity(intent)
         }
+
     }
+
+
+
+
 }
+
+
