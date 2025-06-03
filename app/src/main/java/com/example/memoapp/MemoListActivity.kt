@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.memoapp.databinding.ActivityMemoListBinding
@@ -20,6 +21,7 @@ class MemoListActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMemoListBinding
     private lateinit var memoAdapter: MemoAdapter
+    private var allMemos: List<Memo> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,11 +39,24 @@ class MemoListActivity : AppCompatActivity() {
 
         val db = AppDatabase.getDatabase(this)
         db.memoDao().getAll().observe(this) { memoList ->
+            allMemos = memoList
             memoAdapter = MemoAdapter(memoList)
             binding.recyclerView.adapter = memoAdapter
         }
 
-
+        // 搜索框监听
+        binding.editTextSearch.addTextChangedListener { text ->
+            val keyword = text.toString()
+            val filtered = if (keyword.isBlank()) {
+                allMemos
+            } else {
+                allMemos.filter {
+                    it.title.contains(keyword, ignoreCase = true) ||
+                    it.content.contains(keyword, ignoreCase = true)
+                }
+            }
+            memoAdapter.setData(filtered)
+        }
 
 
         binding.buttonAdd.setOnClickListener {
@@ -81,6 +96,8 @@ class MemoListActivity : AppCompatActivity() {
             Toast.makeText(this@MemoListActivity, "导入成功", Toast.LENGTH_SHORT).show()
         }
     }
+
+ 
 
 
 }

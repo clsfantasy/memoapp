@@ -1,3 +1,4 @@
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
@@ -8,7 +9,7 @@ import com.example.memoapp.Memo
 import com.example.memoapp.MemoDetailActivity
 import com.example.memoapp.R
 
-class MemoAdapter(private val memos: List<Memo>) : RecyclerView.Adapter<MemoAdapter.MemoViewHolder>() {
+class MemoAdapter(private var memos: List<Memo>) : RecyclerView.Adapter<MemoAdapter.MemoViewHolder>() {
 
     inner class MemoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textTitle: TextView = itemView.findViewById(R.id.textTitle)
@@ -35,4 +36,10 @@ class MemoAdapter(private val memos: List<Memo>) : RecyclerView.Adapter<MemoAdap
     }
 
     override fun getItemCount(): Int = memos.size
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setData(newMemos: List<Memo>) {
+        this.memos = newMemos
+        notifyDataSetChanged()
+    }
 }
