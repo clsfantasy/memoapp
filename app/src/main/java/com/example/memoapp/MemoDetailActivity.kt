@@ -1,9 +1,11 @@
 package com.example.memoapp
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.example.memoapp.databinding.ActivityMemoDetailBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +15,7 @@ import kotlinx.coroutines.withContext
 class MemoDetailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMemoDetailBinding
     private var memoId: Int = -1 // -1 表示新增
+    private var selectedImageUri: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +37,12 @@ class MemoDetailActivity : AppCompatActivity() {
                         binding.editTitle.setText(memo.title)
                         binding.editContent.setText(memo.content)
                         binding.editTextCategory.setText(memo.category)
+                        selectedImageUri = memo.imageUri
+                        if (!selectedImageUri.isNullOrEmpty()) {
+                            Glide.with(this@MemoDetailActivity)
+                                .load(selectedImageUri)
+                                .into(binding.imageView)
+                        }
                     }
                 }
             }
@@ -42,11 +51,20 @@ class MemoDetailActivity : AppCompatActivity() {
             binding.btnDelete.isEnabled = false
         }
 
-        // 保存按钮事件
+        // 选择图片按钮
+        binding.btnSelectImage.setOnClickListener {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+            intent.addCategory(Intent.CATEGORY_OPENABLE)
+            intent.type = "image/*"
+            startActivityForResult(intent, 1001)
+        }
+
+        // 保存按钮事件（只需在保存Memo时加上imageUri = selectedImageUri）
         binding.btnSave.setOnClickListener {
             val title = binding.editTitle.text.toString()
             val content = binding.editContent.text.toString()
             val category = binding.editTextCategory.text.toString().ifBlank { "默认" }
+            val imageUriToSave = selectedImageUri
 
             if (title.isNotBlank() && content.isNotBlank()) {
                 // 用lifecycleScope，保证和Activity生命周期一致
@@ -58,7 +76,8 @@ class MemoDetailActivity : AppCompatActivity() {
                                 title = title,
                                 content = content,
                                 category = category,
-                                timestamp = System.currentTimeMillis()
+                                timestamp = System.currentTimeMillis(),
+                                imageUri = imageUriToSave
                             )
                         )
                     } else {
@@ -69,7 +88,8 @@ class MemoDetailActivity : AppCompatActivity() {
                                 title = title,
                                 content = content,
                                 category = category,
-                                timestamp = System.currentTimeMillis()
+                                timestamp = System.currentTimeMillis(),
+                                imageUri = imageUriToSave
                             )
                         )
                     }
@@ -94,6 +114,23 @@ class MemoDetailActivity : AppCompatActivity() {
                 }
 
                 finish()
+            }
+        }
+
+
+
+        
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 1001 && resultCode == RESULT_OK) {
+            val uri = data?.data
+            if (uri != null) {
+                selectedImageUri = uri.toString()
+                Glide.with(this)
+                    .load(uri)
+                    .into(binding.imageView)
             }
         }
     }

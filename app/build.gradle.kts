@@ -52,6 +52,10 @@ dependencies {
     implementation(libs.firebase.crashlytics.buildtools)
     kapt("androidx.room:room-compiler:2.6.1")
 
+    // Glide 图片加载库
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    kapt("com.github.bumptech.glide:compiler:4.16.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
