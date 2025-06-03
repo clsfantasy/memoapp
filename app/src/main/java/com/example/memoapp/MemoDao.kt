@@ -11,6 +11,11 @@ interface MemoDao {
     @Query("SELECT * FROM memo WHERE id = :id LIMIT 1")
     fun getById(id: Int): Memo?
 
+    @Query("SELECT * FROM Memo WHERE category = :category ORDER BY id DESC")
+    fun getByCategory(category: String): LiveData<List<Memo>>
+
+    @Query("SELECT * FROM Memo ORDER BY id DESC")
+    fun getAllSorted(): LiveData<List<Memo>>
 
     @Insert
     suspend fun insert(memo: Memo)

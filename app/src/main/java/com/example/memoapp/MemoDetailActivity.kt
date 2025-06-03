@@ -1,13 +1,14 @@
 package com.example.memoapp
 
-import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.memoapp.databinding.ActivityMemoDetailBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MemoDetailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMemoDetailBinding
@@ -18,7 +19,7 @@ class MemoDetailActivity : AppCompatActivity() {
         binding = ActivityMemoDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val db = AppDatabase.getDatabase(this)
+        val db = AppDatabase.getDatabase(applicationContext)
         val dao = db.memoDao()
 
         // 获取传递的数据
@@ -32,6 +33,7 @@ class MemoDetailActivity : AppCompatActivity() {
                     if (memo != null) {
                         binding.editTitle.setText(memo.title)
                         binding.editContent.setText(memo.content)
+                        binding.editTextCategory.setText(memo.category)
                     }
                 }
             }
@@ -44,20 +46,39 @@ class MemoDetailActivity : AppCompatActivity() {
         binding.btnSave.setOnClickListener {
             val title = binding.editTitle.text.toString()
             val content = binding.editContent.text.toString()
+            val category = binding.editTextCategory.text.toString().ifBlank { "默认" }
 
             if (title.isNotBlank() && content.isNotBlank()) {
-                CoroutineScope(Dispatchers.IO).launch {
+                // 用lifecycleScope，保证和Activity生命周期一致
+                lifecycleScope.launch(Dispatchers.IO) {
                     if (memoId == -1) {
                         // 新增
-                        dao.insert(Memo(title = title, content = content))
+                        dao.insert(
+                            Memo(
+                                title = title,
+                                content = content,
+                                category = category,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
                     } else {
                         // 修改
-                        dao.update(Memo(id = memoId, title = title, content = content))
+                        dao.update(
+                            Memo(
+                                id = memoId,
+                                title = title,
+                                content = content,
+                                category = category,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
                     }
-                    runOnUiThread {
-                        Toast.makeText(this@MemoDetailActivity, "保存成功", Toast.LENGTH_SHORT).show()
+                    // 回到主线程再finish
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@MemoDetailActivity, "保存成功", Toast.LENGTH_SHORT)
+                            .show()
+                        finish()
                     }
-                    finish()
                 }
             } else {
                 Toast.makeText(this, "标题和内容不能为空", Toast.LENGTH_SHORT).show()
