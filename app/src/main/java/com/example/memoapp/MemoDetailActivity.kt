@@ -18,7 +18,8 @@ class MemoDetailActivity : AppCompatActivity() {
         binding = ActivityMemoDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val dao = AppDatabase.getDatabase(this).memoDao()
+        val db = AppDatabase.getDatabase(this)
+        val dao = db.memoDao()
 
         // 获取传递的数据
         memoId = intent.getIntExtra("memo_id", -1)
@@ -53,6 +54,9 @@ class MemoDetailActivity : AppCompatActivity() {
                         // 修改
                         dao.update(Memo(id = memoId, title = title, content = content))
                     }
+                    runOnUiThread {
+                        Toast.makeText(this@MemoDetailActivity, "保存成功", Toast.LENGTH_SHORT).show()
+                    }
                     finish()
                 }
             } else {
@@ -64,6 +68,10 @@ class MemoDetailActivity : AppCompatActivity() {
         binding.btnDelete.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
                 dao.deleteById(memoId)
+                runOnUiThread {
+                    Toast.makeText(this@MemoDetailActivity, "刪除成功", Toast.LENGTH_SHORT).show()
+                }
+
                 finish()
             }
         }
