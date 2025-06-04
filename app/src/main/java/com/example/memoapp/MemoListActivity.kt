@@ -26,6 +26,9 @@ class MemoListActivity : AppCompatActivity() {
     private var allMemos: List<Memo> = emptyList()
     private var categories: List<String> = listOf("全部")
 
+    private val EXPORT_REQUEST_CODE = 1002
+    private val IMPORT_REQUEST_CODE = 1003
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMemoListBinding.inflate(layoutInflater)
@@ -35,11 +38,23 @@ class MemoListActivity : AppCompatActivity() {
         memoAdapter = MemoAdapter(emptyList())
         binding.recyclerView.adapter = memoAdapter
 
+        // 导出按钮点击
         binding.buttonExport.setOnClickListener {
-            exportMemosToJson()
+            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "application/json"
+                putExtra(Intent.EXTRA_TITLE, "memos_backup.json")
+            }
+            startActivityForResult(intent, EXPORT_REQUEST_CODE)
         }
+
+        // 导入按钮点击
         binding.buttonImport.setOnClickListener {
-            importMemosFromJson()
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "application/json"
+            }
+            startActivityForResult(intent, IMPORT_REQUEST_CODE)
         }
 
         val db = AppDatabase.getDatabase(this)
@@ -127,38 +142,38 @@ class MemoListActivity : AppCompatActivity() {
         }
     }
 
-    // 导出Memo为JSON
-    private fun exportMemosToJson() {
-        val db = AppDatabase.getDatabase(this)
-        val dao = db.memoDao()
-        lifecycleScope.launch {
-            val memos = dao.getAllSuspend()
-            val json = Gson().toJson(memos)
-            val file = File(getExternalFilesDir(null), "memos_backup.json")
-            file.writeText(json, Charset.forName("UTF-8"))
-            Toast.makeText(
-                this@MemoListActivity,
-                "导出成功：" + file.absolutePath,
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
+    // 处理导入/导出结果
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK || data == null) return
 
-    // 导入Memo从JSON
-    private fun importMemosFromJson() {
         val db = AppDatabase.getDatabase(this)
         val dao = db.memoDao()
-        lifecycleScope.launch {
-            val file = File(getExternalFilesDir(null), "memos_backup.json")
-            if (!file.exists()) {
-                Toast.makeText(this@MemoListActivity, "未找到备份文件", Toast.LENGTH_SHORT).show()
-                return@launch
+
+        when (requestCode) {
+            EXPORT_REQUEST_CODE -> {
+                val uri = data.data ?: return
+                lifecycleScope.launch {
+                    val memos = dao.getAllSuspend()
+                    val json = Gson().toJson(memos)
+                    contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray(Charset.forName("UTF-8"))) }
+                    Toast.makeText(this@MemoListActivity, "导出成功", Toast.LENGTH_SHORT).show()
+                }
             }
-            val json = file.readText(Charset.forName("UTF-8"))
-            val type = object : TypeToken<List<Memo>>() {}.type
-            val memos: List<Memo> = Gson().fromJson(json, type)
-            memos.forEach { dao.insert(it.copy(id = 0)) } // id=0让Room自增
-            Toast.makeText(this@MemoListActivity, "导入成功", Toast.LENGTH_SHORT).show()
+            IMPORT_REQUEST_CODE -> {
+                val uri = data.data ?: return
+                lifecycleScope.launch {
+                    val json = contentResolver.openInputStream(uri)?.bufferedReader(Charset.forName("UTF-8"))?.readText()
+                    if (json.isNullOrEmpty()) {
+                        Toast.makeText(this@MemoListActivity, "文件读取失败", Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+                    val type = object : com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken<List<Memo>>() {}.type
+                    val memos: List<Memo> = Gson().fromJson(json, type)
+                    memos.forEach { dao.insert(it.copy(id = 0)) }
+                    Toast.makeText(this@MemoListActivity, "导入成功", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
